@@ -31,7 +31,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # runtime-config entrypoint
-COPY --chown=nextjs:nodejs docker/entrypoint.sh /app/entrypoint.sh
+COPY --chown=nextjs:nodejs ./docker/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh \
     && chown -R nextjs:nodejs /app/public
 

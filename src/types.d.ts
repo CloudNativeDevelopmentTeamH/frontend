@@ -30,4 +30,10 @@ declare global {
             details?: unknown;
         }
     }
+    namespace Api {
+        type FetchOptions = RequestInit & {
+            // Override (ENV default)
+            baseUrl?: string;
+        };
+    }
 }

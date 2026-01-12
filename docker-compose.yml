@@ -1,0 +1,14 @@
+services:
+    focus-fe:
+        image: focus-fe:local
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: focus-fe
+        ports:
+            - "3000:3000"
+        environment:
+            # runtime config
+            API_BASE_URL: http://localhost:8088
+            APP_VERSION: local
+        restart: unless-stopped
