@@ -1,65 +1,265 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+import * as React from "react";
+import Link from "next/link";
+
+import { sessionsApi, categoriesApi } from "@/lib/endpoints";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+
+type LoadState = "idle" | "loading" | "working" | "error";
+
+function fmtIso(iso?: unknown): string {
+    if (typeof iso !== "string") return "—";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso;
+    return d.toLocaleString();
+}
+
+export default function HomePage() {
+    const [state, setState] = React.useState<LoadState>("idle");
+    const [error, setError] = React.useState<string | null>(null);
+
+    const [running, setRunning] = React.useState<Focus.FocusSession | null>(null);
+    const [categories, setCategories] = React.useState<Focus.Category[]>([]);
+    const [lastRefreshAt, setLastRefreshAt] = React.useState<Date | null>(null);
+
+    const activeCount = React.useMemo(
+        () => categories.filter((c) => !c.archived).length,
+        [categories]
+    );
+    const archivedCount = React.useMemo(
+        () => categories.filter((c) => c.archived).length,
+        [categories]
+    );
+
+    const reload = React.useCallback(async () => {
+        setState((s) => (s === "working" ? "working" : "loading"));
+        setError(null);
+
+        try {
+            const [r, cats] = await Promise.all([
+                sessionsApi.running().catch((e: any) => {
+                    // treat 404 as "not running"
+                    const msg = e?.message ?? "";
+                    if (typeof msg === "string" && msg.includes("404")) return null;
+                    throw e;
+                }),
+                categoriesApi.list(),
+            ]);
+
+            setRunning((r as any) ?? null);
+            setCategories(cats);
+
+            setLastRefreshAt(new Date());
+            setState("idle");
+        } catch (e: any) {
+            setError(e?.message ?? "Failed to load dashboard data");
+            setState("error");
+        }
+    }, []);
+
+    React.useEffect(() => {
+        void reload();
+    }, [reload]);
+
+    async function mutate(action: "start" | "resume" | "stop", fn: () => Promise<void>) {
+        setState("working");
+        setError(null);
+        try {
+            await fn();
+            await reload();
+        } catch (e: any) {
+            setError(e?.message ?? `Action failed: ${action}`);
+            setState("error");
+        } finally {
+            setState((s) => (s === "loading" ? "idle" : s));
+        }
+    }
+
+    const disabled = state === "working";
+
+    return (
+        <div className="mx-auto max-w-4xl space-y-6 p-6">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <h1 className="text-2xl font-semibold">Focus</h1>
+                    <p className="text-sm text-muted-foreground">
+                        Minimal dashboard for sessions and categories.
+                    </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    {state === "loading" ? <Badge variant="outline">loading…</Badge> : null}
+                    {state === "working" ? <Badge variant="outline">working…</Badge> : null}
+                    <Button
+                        variant="secondary"
+                        onClick={() => void reload()}
+                        disabled={state === "loading" || disabled}
+                    >
+                        Refresh
+                    </Button>
+                </div>
+            </div>
+
+            {error ? (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-base">Error</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        <div className="text-sm">{error}</div>
+                        <div className="flex gap-2">
+                            <Button variant="secondary" onClick={() => void reload()} disabled={disabled}>
+                                Retry
+                            </Button>
+                            <Button variant="ghost" onClick={() => setError(null)} disabled={disabled}>
+                                Dismiss
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            ) : null}
+
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                {/* Current session */}
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between gap-3">
+                        <CardTitle className="text-base">Current session</CardTitle>
+                        <Badge variant={running ? "secondary" : "outline"}>
+                            {running ? "running" : "not running"}
+                        </Badge>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {running ? (
+                            <div className="space-y-2 text-sm">
+                                <div className="flex items-center justify-between gap-3">
+                                    <span className="text-muted-foreground">Started</span>
+                                    <span className="font-medium">{fmtIso(running.startAt)}</span>
+                                </div>
+                                <div className="flex items-center justify-between gap-3">
+                                    <span className="text-muted-foreground">Category ID</span>
+                                    <span className="font-mono text-xs">
+                                        {(running.categoryId as any) ?? "—"}
+                                    </span>
+                                </div>
+                                <div className="space-y-1">
+                                    <div className="text-muted-foreground">Note</div>
+                                    <div className="rounded-md border p-2 text-sm">
+                                        {typeof running.note === "string" && running.note.trim()
+                                            ? running.note
+                                            : "—"}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="text-sm text-muted-foreground">
+                                No session is currently running.
+                            </div>
+                        )}
+
+                        <Separator />
+
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                            <Button
+                                onClick={() => mutate("start", () => sessionsApi.start())}
+                                disabled={disabled}
+                                className="sm:w-1/3"
+                            >
+                                Start
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                onClick={() => mutate("resume", () => sessionsApi.resume())}
+                                disabled={disabled}
+                                className="sm:w-1/3"
+                            >
+                                Resume
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                onClick={() => mutate("stop", () => sessionsApi.stop())}
+                                disabled={disabled || !running}
+                                className="sm:w-1/3"
+                                title={!running ? "No running session" : undefined}
+                            >
+                                Stop
+                            </Button>
+                        </div>
+
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span>
+                                Last refresh: {lastRefreshAt ? lastRefreshAt.toLocaleString() : "—"}
+                            </span>
+                            <Link href="/sessions" className="underline underline-offset-4">
+                                Open sessions
+                            </Link>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Categories */}
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between gap-3">
+                        <CardTitle className="text-base">Categories</CardTitle>
+                        <Link href="/categories">
+                            <Button variant="secondary">Open</Button>
+                        </Link>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex flex-wrap gap-2">
+                            <Badge variant="secondary">Active: {activeCount}</Badge>
+                            <Badge variant="secondary">Archived: {archivedCount}</Badge>
+                            <Badge variant="outline">Total: {categories.length}</Badge>
+                        </div>
+
+                        <div className="text-sm text-muted-foreground">
+                            Manage your category set for organizing focus sessions.
+                        </div>
+
+                        <Separator />
+
+                        {/* Show a small preview list */}
+                        <div className="space-y-2">
+                            {categories.length === 0 ? (
+                                <div className="text-sm text-muted-foreground">
+                                    No categories yet.
+                                </div>
+                            ) : (
+                                <ul className="space-y-2">
+                                    {categories
+                                        .filter((c) => !c.archived)
+                                        .slice(0, 5)
+                                        .map((c) => (
+                                            <li
+                                                key={c.id}
+                                                className="flex items-center justify-between rounded-md border p-2"
+                                            >
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <span
+                                                        className="h-3 w-3 rounded-full border"
+                                                        style={{ backgroundColor: c.color }}
+                                                    />
+                                                    <span className="truncate text-sm font-medium">{c.name}</span>
+                                                </div>
+                                                <Badge variant="secondary" className="font-mono">
+                                                    {c.id}
+                                                </Badge>
+                                            </li>
+                                        ))}
+                                </ul>
+                            )}
+                        </div>
+
+                        <div className="text-xs text-muted-foreground">
+                            Showing up to 5 active categories.
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+    );
 }
