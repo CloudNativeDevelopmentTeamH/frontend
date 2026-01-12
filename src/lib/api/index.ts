@@ -3,10 +3,6 @@ import { resolveApiBaseUrl } from "@/lib/api/base-url";
 import { joinUrl, tryParseJson, getRuntimeBaseUrl } from "@/lib/api/utils";
 
 export async function apiFetch<T>(path: string, options: Api.FetchOptions = {}): Promise<T> {
-    // --- DEBUG LOGGING ---
-    const runtime = (typeof window !== "undefined" ? (window as any).__RUNTIME_CONFIG__ : undefined);
-    console.debug("[apiFetch hit]", { path, runtime, override: options.baseUrl });
-    // ---------------------
     const baseUrl = options.baseUrl ?? getRuntimeBaseUrl();
     const url = baseUrl ? joinUrl(baseUrl, path) : path;
 
