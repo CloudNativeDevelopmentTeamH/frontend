@@ -16,3 +16,6 @@ end_of_line = lf
 
 [Dockerfile]
 end_of_line = lf
+
+[*.yml]
+indent_size = 2
