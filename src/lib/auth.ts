@@ -10,13 +10,35 @@ export interface AuthUser {
 }
 
 /**
- * Authenticate the current user with the stored token
+ * Check if user is authenticated
  */
-export async function authenticate(): Promise<AuthUser | null> {
+export async function checkAuth(): Promise<boolean> {
     const authApiUrl = process.env.NEXT_PUBLIC_AUTH_API_BASE_URL || "http://localhost:4000";
 
     try {
         const res = await fetch(`${authApiUrl}/auth/authenticate`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            credentials: "include",
+        });
+
+        return res.ok;
+    } catch (error) {
+        console.error("Authentication check failed:", error);
+        return false;
+    }
+}
+
+/**
+ * Fetch the current user's profile
+ */
+export async function fetchProfile(): Promise<AuthUser | null> {
+    const authApiUrl = process.env.NEXT_PUBLIC_AUTH_API_BASE_URL || "http://localhost:4000";
+
+    try {
+        const res = await fetch(`${authApiUrl}/auth/profile`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -29,11 +51,23 @@ export async function authenticate(): Promise<AuthUser | null> {
         }
 
         const data = await res.json();
-        return data.user || data;
+        return data.user;
     } catch (error) {
-        console.error("Authentication failed:", error);
+        console.error("Failed to fetch profile:", error);
         return null;
     }
+}
+
+/**
+ * Authenticate the current user and fetch profile
+ */
+export async function authenticate(): Promise<AuthUser | null> {
+    const isAuthenticated = await checkAuth();
+    if (!isAuthenticated) {
+        return null;
+    }
+
+    return await fetchProfile();
 }
 
 /**
