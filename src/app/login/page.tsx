@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { login } from "@/lib/auth";
 
-export default function LoginPage() {
+function LoginForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [email, setEmail] = React.useState("");
@@ -115,5 +115,17 @@ export default function LoginPage() {
                 </CardContent>
             </Card>
         </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <React.Suspense fallback={
+            <div className="mx-auto max-w-md space-y-6 p-6 pt-24">
+                <div className="text-center text-muted-foreground">Loading...</div>
+            </div>
+        }>
+            <LoginForm />
+        </React.Suspense>
     );
 }
