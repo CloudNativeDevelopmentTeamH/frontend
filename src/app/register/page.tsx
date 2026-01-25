@@ -26,7 +26,8 @@ export default function RegisterPage() {
             // Redirect to login with success message
             router.push("/login?registered=true");
         } catch (err: any) {
-            setError(err?.message || "Registration failed. Please try again.");
+            console.error("Registration error:", err);
+            setError(err?.message || err?.toString() || "Registration failed. Please try again.");
         } finally {
             setIsLoading(false);
         }
