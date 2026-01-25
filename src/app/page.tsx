@@ -2,8 +2,10 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { sessionsApi, categoriesApi } from "@/lib/endpoints";
+import { authenticate, logout, type AuthUser } from "@/lib/auth";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,6 +22,9 @@ function fmtIso(iso?: unknown): string {
 }
 
 export default function HomePage() {
+    const router = useRouter();
+    const [user, setUser] = React.useState<AuthUser | null>(null);
+    const [authChecking, setAuthChecking] = React.useState(true);
     const [state, setState] = React.useState<LoadState>("idle");
     const [error, setError] = React.useState<string | null>(null);
 
@@ -35,6 +40,20 @@ export default function HomePage() {
         () => categories.filter((c) => c.archived).length,
         [categories]
     );
+
+    // Check authentication on mount
+    React.useEffect(() => {
+        const checkAuth = async () => {
+            const currentUser = await authenticate();
+            if (!currentUser) {
+                router.push("/login");
+            } else {
+                setUser(currentUser);
+                setAuthChecking(false);
+            }
+        };
+        void checkAuth();
+    }, [router]);
 
     const reload = React.useCallback(async () => {
         setState((s) => (s === "working" ? "working" : "loading"));
@@ -63,8 +82,10 @@ export default function HomePage() {
     }, []);
 
     React.useEffect(() => {
-        void reload();
-    }, [reload]);
+        if (!authChecking) {
+            void reload();
+        }
+    }, [reload, authChecking]);
 
     async function mutate(action: "start" | "resume" | "stop", fn: () => Promise<void>) {
         setState("working");
@@ -80,13 +101,30 @@ export default function HomePage() {
         }
     }
 
+    async function handleLogout() {
+        await logout();
+        router.push("/login");
+    }
+
+    if (authChecking) {
+        return (
+            <div className="mx-auto max-w-4xl space-y-6 p-6">
+                <div className="text-center text-muted-foreground">
+                    Loading...
+                </div>
+            </div>
+        );
+    }
+
     const disabled = state === "working";
 
     return (
         <div className="mx-auto max-w-4xl space-y-6 p-6">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <h1 className="text-2xl font-semibold">Focus</h1>
+                    <h1 className="text-2xl font-semibold">
+                        Welcome {user?.name || user?.email || "User"} to <span className="text-blue-500 font-bold">Focus</span>
+                    </h1>
                     <p className="text-sm text-muted-foreground">
                         Minimal dashboard for sessions and categories.
                     </p>
@@ -101,6 +139,13 @@ export default function HomePage() {
                         disabled={state === "loading" || disabled}
                     >
                         Refresh
+                    </Button>
+                    <Button
+                        variant="outline"
+                        onClick={() => void handleLogout()}
+                        disabled={disabled}
+                    >
+                        Logout
                     </Button>
                 </div>
             </div>
