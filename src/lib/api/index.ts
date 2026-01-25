@@ -15,6 +15,7 @@ export async function apiFetch<T>(path: string, options: Api.FetchOptions = {}):
                 ...(options.body ? { "content-type": "application/json" } : {}),
                 ...(options.headers ?? {}),
             },
+            credentials: "include",
             cache: "no-store",
         });
 

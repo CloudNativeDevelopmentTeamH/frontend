@@ -67,7 +67,42 @@ export async function authenticate(): Promise<AuthUser | null> {
         return null;
     }
 
+    // Also establish focus auth session (not a tracking session - just auth cookies)
+    await establishFocusAuthSession().catch(err => {
+        console.error("Failed to establish focus auth session:", err);
+    });
+
     return await fetchProfile();
+}
+
+/**
+ * Establish focus service authentication session using the auth token
+ * This creates focus_sid and focus_csrf cookies for API access
+ */
+async function establishFocusAuthSession(): Promise<void> {
+    const focusApiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8088";
+
+    // Get auth token from cookie
+    const authToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('auth_token='))
+        ?.split('=')[1];
+
+    if (!authToken) {
+        throw new Error("No auth token found");
+    }
+
+    const res = await fetch(`${focusApiUrl}/auth/session`, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${authToken}`,
+        },
+        credentials: "include",
+    });
+
+    if (!res.ok) {
+        throw new Error(`Failed to establish focus auth session: ${res.status}`);
+    }
 }
 
 /**
@@ -93,6 +128,12 @@ export async function login(email: string, password: string): Promise<{ user: Au
     // Response might be empty or contain user data
     const text = await res.text();
     const data = text ? JSON.parse(text) : {};
+
+    // Establish focus auth session after successful login (for API access, not tracking)
+    await establishFocusAuthSession().catch(err => {
+        console.error("Failed to establish focus auth session:", err);
+    });
+
     return { user: data.user || data };
 }
 
@@ -127,8 +168,16 @@ export async function register(email: string, password: string, name?: string): 
  */
 export async function logout(): Promise<void> {
     const authApiUrl = process.env.NEXT_PUBLIC_AUTH_API_BASE_URL || "http://localhost:4000";
+    const focusApiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8088";
 
     try {
+        // Logout from focus first
+        await fetch(`${focusApiUrl}/auth/logout`, {
+            method: "POST",
+            credentials: "include",
+        }).catch(err => console.error("Focus logout failed:", err));
+
+        // Then logout from auth
         await fetch(`${authApiUrl}/auth/logout`, {
             method: "POST",
             credentials: "include",
