@@ -24,7 +24,7 @@ export const sessionsApi = {
 
 export const categoriesApi = {
     list: () =>
-        apiFetch<Focus.Category[]>("/categories/list"),
+        apiFetch<Focus.Category[]>("/categories"),
 
     create: (body: { name: string; color?: string }) =>
         apiFetch<void>("/categories/create", {
@@ -33,20 +33,17 @@ export const categoriesApi = {
         }),
 
     delete: (body: { categoryId: string }) =>
-        apiFetch<void>("/categories/delete", {
+        apiFetch<void>(`/categories/delete?categoryId=${encodeURIComponent(body.categoryId)}`, {
             method: "POST",
-            body: JSON.stringify(body),
         }),
 
     archive: (body: { categoryId: string }) =>
-        apiFetch<void>("/categories/archive", {
+        apiFetch<void>(`/categories/archive?categoryId=${encodeURIComponent(body.categoryId)}`, {
             method: "POST",
-            body: JSON.stringify(body),
         }),
 
     unarchive: (body: { categoryId: string }) =>
-        apiFetch<void>("/categories/unarchive", {
+        apiFetch<void>(`/categories/unarchive?categoryId=${encodeURIComponent(body.categoryId)}`, {
             method: "POST",
-            body: JSON.stringify(body),
         }),
 };

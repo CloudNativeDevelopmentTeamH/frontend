@@ -8,11 +8,25 @@ export async function apiFetch<T>(path: string, options: Api.FetchOptions = {}):
 
     console.log(`[API] ${options.method ?? 'GET'} ${url}`, { baseUrl, path });
 
+    // Extract CSRF token from focus_csrf cookie for state-changing requests
+    const method = options.method?.toUpperCase();
+    const isStateChanging = method === 'POST' || method === 'PUT' || method === 'DELETE' || method === 'PATCH';
+    let csrfToken: string | undefined;
+
+    if (isStateChanging && typeof document !== 'undefined') {
+        const csrfCookie = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('focus_csrf='))
+            ?.split('=')[1];
+        csrfToken = csrfCookie;
+    }
+
     try {
         const res = await fetch(url, {
             ...options,
             headers: {
                 ...(options.body ? { "content-type": "application/json" } : {}),
+                ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
                 ...(options.headers ?? {}),
             },
             credentials: "include",
