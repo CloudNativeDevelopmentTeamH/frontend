@@ -123,12 +123,12 @@ export default function SessionsPage() {
                             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                 <div className="rounded-md border p-3">
                                     <div className="text-xs text-muted-foreground">Session ID</div>
-                                    <div className="mt-1 font-mono text-sm">{running.id ?? "—"}</div>
+                                    <div className="mt-1 font-mono text-sm">{running.sessionId ?? "—"}</div>
                                 </div>
 
                                 <div className="rounded-md border p-3">
                                     <div className="text-xs text-muted-foreground">Started at</div>
-                                    <div className="mt-1 text-sm">{fmtIso(running.startAt)}</div>
+                                    <div className="mt-1 text-sm">{fmtIso(running.startedAt)}</div>
                                 </div>
 
                                 <div className="rounded-md border p-3">
