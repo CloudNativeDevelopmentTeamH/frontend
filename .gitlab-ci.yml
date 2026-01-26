@@ -84,4 +84,4 @@ deploy-eks-prod:
     - apk add aws-cli
     - aws eks update-kubeconfig --region eu-central-1 --name cnd-prod-eks
   script:
-    - helm upgrade auth ./helm --namespace auth
+    - helm upgrade frontend ./helm -n frontend
