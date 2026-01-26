@@ -8,6 +8,11 @@ export const sessionsApi = {
     running: () =>
         apiFetch<Focus.FocusSession | null>("/sessions/running"),
 
+    list: async () => {
+        const response = await apiFetch<{ sessions: Focus.FocusSession[] }>("/sessions");
+        return response.sessions;
+    },
+
     start: (body?: { categoryId?: string; note?: string }) =>
         apiFetch<void>("/sessions/start", {
             method: "POST",
