@@ -381,12 +381,11 @@ export default function HomePage() {
                     <div className="space-y-4">
                         <div className="space-y-2">
                             <Label>Category (optional)</Label>
-                            <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
+                            <Select value={selectedCategoryId || undefined} onValueChange={setSelectedCategoryId}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="No category" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="">No category</SelectItem>
                                     {categories.filter(c => !c.archived).map(c => (
                                         <SelectItem key={c.categoryId} value={c.categoryId}>
                                             <div className="flex items-center gap-2">
