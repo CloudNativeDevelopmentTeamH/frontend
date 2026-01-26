@@ -11,6 +11,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 type LoadState = "idle" | "loading" | "working" | "error";
 
@@ -31,6 +48,12 @@ export default function HomePage() {
     const [running, setRunning] = React.useState<Focus.FocusSession | null>(null);
     const [categories, setCategories] = React.useState<Focus.Category[]>([]);
     const [lastRefreshAt, setLastRefreshAt] = React.useState<Date | null>(null);
+
+    // Session dialog state
+    const [sessionDialogOpen, setSessionDialogOpen] = React.useState(false);
+    const [sessionAction, setSessionAction] = React.useState<"start" | "resume">("start");
+    const [selectedCategoryId, setSelectedCategoryId] = React.useState<string>("");
+    const [sessionNote, setSessionNote] = React.useState("");
 
     const activeCount = React.useMemo(
         () => categories.filter((c) => !c.archived).length,
@@ -99,6 +122,42 @@ export default function HomePage() {
         } finally {
             setState((s) => (s === "loading" ? "idle" : s));
         }
+    }
+
+    function openSessionDialog(action: "start" | "resume") {
+        setSessionAction(action);
+        setSelectedCategoryId("");
+        setSessionNote("");
+        setSessionDialogOpen(true);
+    }
+
+    function closeSessionDialog() {
+        setSessionDialogOpen(false);
+        setSelectedCategoryId("");
+        setSessionNote("");
+    }
+
+    async function handleSessionSubmit() {
+        const action = sessionAction;
+        closeSessionDialog();
+
+        await mutate(action, async () => {
+            const body: any = {};
+            if (selectedCategoryId) body.categoryId = selectedCategoryId;
+            if (sessionNote.trim()) body.note = sessionNote.trim();
+
+            const endpoint = action === "start" ? "/sessions/start" : "/sessions/resume";
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8088"}${endpoint}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined,
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to ${action} session`);
+            }
+        });
     }
 
     async function handleLogout() {
@@ -210,7 +269,7 @@ export default function HomePage() {
 
                         <div className="flex flex-col gap-2 sm:flex-row">
                             <Button
-                                onClick={() => mutate("start", () => sessionsApi.start())}
+                                onClick={() => openSessionDialog("start")}
                                 disabled={disabled || running !== null}
                                 className="sm:w-1/3"
                                 title={running ? "Session already running" : undefined}
@@ -219,7 +278,7 @@ export default function HomePage() {
                             </Button>
                             <Button
                                 variant="secondary"
-                                onClick={() => mutate("resume", () => sessionsApi.resume())}
+                                onClick={() => openSessionDialog("resume")}
                                 disabled={disabled || running !== null}
                                 className="sm:w-1/3"
                                 title={running ? "Stop current session first" : "Resume last session"}
@@ -307,6 +366,60 @@ export default function HomePage() {
                     </CardContent>
                 </Card>
             </div>
+
+            <Dialog open={sessionDialogOpen} onOpenChange={setSessionDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{sessionAction === "start" ? "Start" : "Resume"} Session</DialogTitle>
+                        <DialogDescription>
+                            {sessionAction === "start"
+                                ? "Optionally select a category and add a note for this session."
+                                : "Optionally change the category or add a note. Previous category will be used if none selected."}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label>Category (optional)</Label>
+                            <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="No category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="">No category</SelectItem>
+                                    {categories.filter(c => !c.archived).map(c => (
+                                        <SelectItem key={c.categoryId} value={c.categoryId}>
+                                            <div className="flex items-center gap-2">
+                                                <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: c.color }} />
+                                                {c.name}
+                                            </div>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Note (optional)</Label>
+                            <Textarea
+                                value={sessionNote}
+                                onChange={(e) => setSessionNote(e.target.value)}
+                                placeholder="Add a note for this session..."
+                                rows={3}
+                            />
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="secondary" onClick={closeSessionDialog}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleSessionSubmit}>
+                            {sessionAction === "start" ? "Start" : "Resume"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
