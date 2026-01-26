@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { sessionsApi } from "@/lib/endpoints";
+import { sessionsApi, categoriesApi } from "@/lib/endpoints";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ export default function SessionsPage() {
     const [error, setError] = React.useState<string | null>(null);
 
     const [running, setRunning] = React.useState<Focus.FocusSession | null>(null);
+    const [categories, setCategories] = React.useState<Focus.Category[]>([]);
     const [lastRefreshAt, setLastRefreshAt] = React.useState<Date | null>(null);
 
     const reload = React.useCallback(async () => {
@@ -30,21 +31,20 @@ export default function SessionsPage() {
         setError(null);
 
         try {
-            const res = await sessionsApi.running();
-            // apiFetch returns undefined for 204 -> treat as null
+            const [res, cats] = await Promise.all([
+                sessionsApi.running().catch((e: any) => {
+                    const msg = e?.message ?? "";
+                    if (typeof msg === "string" && msg.includes("404")) return null;
+                    throw e;
+                }),
+                categoriesApi.list(),
+            ]);
             setRunning((res as any) ?? null);
+            setCategories(cats);
             setLastRefreshAt(new Date());
             setState("idle");
         } catch (e: any) {
-            // If backend uses 404 for "no running session", treat as null
-            const msg = e?.message ?? "Failed to load running session";
-            if (typeof msg === "string" && msg.includes("404")) {
-                setRunning(null);
-                setLastRefreshAt(new Date());
-                setState("idle");
-                return;
-            }
-            setError(msg);
+            setError(e?.message ?? "Failed to load session data");
             setState("error");
         }
     }, []);
@@ -72,6 +72,11 @@ export default function SessionsPage() {
     const disabled = state === "working";
 
     const statusLabel = running ? "running" : "not running";
+
+    const category = React.useMemo(() => {
+        if (!running?.categoryId) return null;
+        return categories.find(c => c.categoryId === running.categoryId);
+    }, [running, categories]);
 
     return (
         <div className="mx-auto max-w-3xl space-y-6 p-6">
@@ -139,9 +144,19 @@ export default function SessionsPage() {
                                 </div>
 
                                 <div className="rounded-md border p-3">
-                                    <div className="text-xs text-muted-foreground">Category ID</div>
-                                    <div className="mt-1 font-mono text-sm">
-                                        {(running.categoryId as any) ?? "—"}
+                                    <div className="text-xs text-muted-foreground">Category</div>
+                                    <div className="mt-1 text-sm">
+                                        {category ? (
+                                            <div className="flex items-center gap-2">
+                                                <span
+                                                    className="h-3 w-3 rounded-full border"
+                                                    style={{ backgroundColor: category.color }}
+                                                />
+                                                <span className="font-medium">{category.name}</span>
+                                            </div>
+                                        ) : (
+                                            <span className="text-muted-foreground">—</span>
+                                        )}
                                     </div>
                                 </div>
 
