@@ -146,16 +146,10 @@ export default function HomePage() {
             if (selectedCategoryId) body.categoryId = selectedCategoryId;
             if (sessionNote.trim()) body.note = sessionNote.trim();
 
-            const endpoint = action === "start" ? "/sessions/start" : "/sessions/resume";
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8088"}${endpoint}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined,
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to ${action} session`);
+            if (action === "start") {
+                await sessionsApi.start(Object.keys(body).length > 0 ? body : undefined);
+            } else {
+                await sessionsApi.resume(Object.keys(body).length > 0 ? body : undefined);
             }
         });
     }
