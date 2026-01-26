@@ -69,7 +69,7 @@ function CategoryRow({
                     <div className="truncate font-medium">{c.name}</div>
                     <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                         <Badge variant="secondary" className="font-mono">
-                            {c.id}
+                            {c.categoryId}
                         </Badge>
                         {c.archived ? <Badge variant="outline">archived</Badge> : null}
                     </div>
@@ -170,9 +170,9 @@ export default function CategoriesPage() {
         await withMutation(
             async () => {
                 if (c.archived) {
-                    await categoriesApi.unarchive({ categoryId: c.id });
+                    await categoriesApi.unarchive({ categoryId: c.categoryId });
                 } else {
-                    await categoriesApi.archive({ categoryId: c.id });
+                    await categoriesApi.archive({ categoryId: c.categoryId });
                 }
             },
             "Update failed"
@@ -185,7 +185,7 @@ export default function CategoriesPage() {
 
         await withMutation(
             async () => {
-                await categoriesApi.delete({ categoryId: c.id });
+                await categoriesApi.delete({ categoryId: c.categoryId });
             },
             "Delete failed"
         );
@@ -328,7 +328,7 @@ export default function CategoriesPage() {
                                 <ul className="space-y-2">
                                     {active.map((c) => (
                                         <CategoryRow
-                                            key={c.id}
+                                            key={c.categoryId}
                                             c={c}
                                             disabled={mutating}
                                             onArchiveToggle={onArchiveToggle}
@@ -353,7 +353,7 @@ export default function CategoriesPage() {
                                 <ul className="space-y-2">
                                     {archived.map((c) => (
                                         <CategoryRow
-                                            key={c.id}
+                                            key={c.categoryId}
                                             c={c}
                                             disabled={mutating}
                                             onArchiveToggle={onArchiveToggle}

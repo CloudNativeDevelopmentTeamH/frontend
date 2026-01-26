@@ -281,7 +281,7 @@ export default function HomePage() {
                                         .slice(0, 5)
                                         .map((c) => (
                                             <li
-                                                key={c.id}
+                                                key={c.categoryId}
                                                 className="flex items-center justify-between rounded-md border p-2"
                                             >
                                                 <div className="flex items-center gap-2 min-w-0">
@@ -292,7 +292,7 @@ export default function HomePage() {
                                                     <span className="truncate text-sm font-medium">{c.name}</span>
                                                 </div>
                                                 <Badge variant="secondary" className="font-mono">
-                                                    {c.id}
+                                                    {c.categoryId}
                                                 </Badge>
                                             </li>
                                         ))}

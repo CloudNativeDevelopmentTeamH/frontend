@@ -8,7 +8,7 @@ declare global {
         type SessionId = Id;
 
         interface Category {
-            id: CategoryId;
+            categoryId: CategoryId;
             name: string;
             color: string;
             archived: boolean;
