@@ -1,5 +1,7 @@
 namespace: frontend
 
+certificateArn: "arn:aws:acm:eu-central-1:758280076486:certificate/946198a1-757c-4868-8e17-e2446087313f"
+
 # App configuration
 frontend:
   name: frontend-app
