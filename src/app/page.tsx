@@ -183,7 +183,7 @@ export default function HomePage() {
                             <div className="space-y-2 text-sm">
                                 <div className="flex items-center justify-between gap-3">
                                     <span className="text-muted-foreground">Started</span>
-                                    <span className="font-medium">{fmtIso(running.startAt)}</span>
+                                    <span className="font-medium">{fmtIso(running.startedAt)}</span>
                                 </div>
                                 <div className="flex items-center justify-between gap-3">
                                     <span className="text-muted-foreground">Category ID</span>

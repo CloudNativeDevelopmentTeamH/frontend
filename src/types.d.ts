@@ -15,8 +15,8 @@ declare global {
         }
 
         interface FocusSession {
-            id: SessionId;
-            startAt: string; // ISO-8601
+            sessionId: SessionId;
+            startedAt: string; // ISO-8601
             endAt?: string | null; // ISO-8601 or null
             categoryId?: CategoryId | null;
             note?: string | null;
