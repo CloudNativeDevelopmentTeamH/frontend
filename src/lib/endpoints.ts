@@ -11,11 +11,11 @@ export const sessionsApi = {
     start: () =>
         apiFetch<void>("/sessions/start", { method: "POST" }),
 
-    resume: () =>
-        apiFetch<void>("/sessions/resume", { method: "POST" }),
+    resume: (previousSessionId: string) =>
+        apiFetch<void>(`/sessions/resume?previousSessionId=${encodeURIComponent(previousSessionId)}`, { method: "POST" }),
 
-    stop: () =>
-        apiFetch<void>("/sessions/stop", { method: "POST" }),
+    stop: (sessionId: string) =>
+        apiFetch<void>(`/sessions/stop?sessionId=${encodeURIComponent(sessionId)}`, { method: "POST" }),
 };
 
 /* =======================
