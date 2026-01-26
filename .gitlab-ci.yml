@@ -71,3 +71,17 @@ push-image-ecr:
   script:
     - skopeo copy --src-creds "$HARBOR_ROBOT_NAME:$HARBOR_ROBOT_TOKEN" --dest-creds "AWS:$ECR_PASSWORD" "docker://$HARBOR_IMAGE:$APP_VERSION" "docker://$ECR_IMAGE:$APP_VERSION"
     - skopeo copy --src-creds "$HARBOR_ROBOT_NAME:$HARBOR_ROBOT_TOKEN" --dest-creds "AWS:$ECR_PASSWORD" "docker://$HARBOR_IMAGE:latest" "docker://$ECR_IMAGE:latest"
+
+deploy-eks-prod:
+  stage: 🚀 deploy
+  extends: .image_names
+  needs:
+    - push-image-ecr
+  image:
+    name: alpine/helm:4.0.5
+    entrypoint: [""]
+  before_script:
+    - apk add aws-cli
+    - aws eks update-kubeconfig --region eu-central-1 --name cnd-prod-eks
+  script:
+    - helm upgrade auth ./helm --namespace auth
