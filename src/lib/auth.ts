@@ -67,10 +67,8 @@ export async function authenticate(): Promise<AuthUser | null> {
         return null;
     }
 
-    // Also establish focus auth session (not a tracking session - just auth cookies)
-    await establishFocusAuthSession().catch(err => {
-        console.error("Failed to establish focus auth session:", err);
-    });
+    // Note: Focus auth session should already be established during login
+    // If it's not, user may need to re-login
 
     return await fetchProfile();
 }
@@ -79,17 +77,11 @@ export async function authenticate(): Promise<AuthUser | null> {
  * Establish focus service authentication session using the auth token
  * This creates focus_sid and focus_csrf cookies for API access
  */
-async function establishFocusAuthSession(): Promise<void> {
+async function establishFocusAuthSession(authToken: string): Promise<void> {
     const focusApiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8088";
 
-    // Get auth token from cookie
-    const authToken = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('auth_token='))
-        ?.split('=')[1];
-
     if (!authToken) {
-        throw new Error("No auth token found");
+        throw new Error("No auth token provided");
     }
 
     const res = await fetch(`${focusApiUrl}/auth/session`, {
@@ -130,9 +122,11 @@ export async function login(email: string, password: string): Promise<{ user: Au
     const data = text ? JSON.parse(text) : {};
 
     // Establish focus auth session after successful login (for API access, not tracking)
-    await establishFocusAuthSession().catch(err => {
-        console.error("Failed to establish focus auth session:", err);
-    });
+    if (data.token) {
+        await establishFocusAuthSession(data.token).catch(err => {
+            console.error("Failed to establish focus auth session:", err);
+        });
+    }
 
     return { user: data.user || data };
 }
