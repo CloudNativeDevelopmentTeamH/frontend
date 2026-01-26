@@ -55,15 +55,17 @@ export default function SessionsPage() {
         setError(null);
 
         try {
-            const [res, cats] = await Promise.all([
+            const [res, allSessions, cats] = await Promise.all([
                 sessionsApi.running().catch((e: any) => {
                     const msg = e?.message ?? "";
                     if (typeof msg === "string" && msg.includes("404")) return null;
                     throw e;
                 }),
+                sessionsApi.list(),
                 categoriesApi.list(),
             ]);
             setRunning((res as any) ?? null);
+            setSessions(allSessions);
             setCategories(cats);
             setLastRefreshAt(new Date());
             setState("idle");
@@ -127,10 +129,15 @@ export default function SessionsPage() {
 
     const statusLabel = running ? "running" : "not running";
 
+    const getCategoryById = React.useCallback((categoryId: string | null | undefined) => {
+        if (!categoryId) return null;
+        return categories.find(c => c.categoryId === categoryId);
+    }, [categories]);
+
     const category = React.useMemo(() => {
         if (!running?.categoryId) return null;
-        return categories.find(c => c.categoryId === running.categoryId);
-    }, [running, categories]);
+        return getCategoryById(running.categoryId);
+    }, [running, getCategoryById]);
 
     return (
         <div className="mx-auto max-w-3xl space-y-6 p-6">
@@ -270,6 +277,64 @@ export default function SessionsPage() {
                             {lastRefreshAt ? lastRefreshAt.toLocaleString() : "—"}
                         </span>
                     </div>
+                </CardContent>
+            </Card>
+
+            {/* All Sessions */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-base">All Sessions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {sessions.length === 0 ? (
+                        <div className="text-sm text-muted-foreground">
+                            No sessions found.
+                        </div>
+                    ) : (
+                        <div className="space-y-2">
+                            {sessions.map(session => {
+                                const sessionCategory = getCategoryById(session.categoryId);
+                                return (
+                                    <div
+                                        key={session.sessionId}
+                                        className="flex flex-col gap-2 rounded-md border p-3"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                {sessionCategory ? (
+                                                    <>
+                                                        <span
+                                                            className="h-3 w-3 rounded-full border"
+                                                            style={{ backgroundColor: sessionCategory.color }}
+                                                        />
+                                                        <span className="font-medium text-sm">{sessionCategory.name}</span>
+                                                    </>
+                                                ) : (
+                                                    <span className="text-sm text-muted-foreground">No category</span>
+                                                )}
+                                            </div>
+                                            <Badge variant={session.endedAt ? "outline" : "secondary"}>
+                                                {session.endedAt ? "finished" : "running"}
+                                            </Badge>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-1 text-xs text-muted-foreground sm:grid-cols-2">
+                                            <div>
+                                                <span className="font-medium">Started:</span> {fmtIso(session.startedAt)}
+                                            </div>
+                                            <div>
+                                                <span className="font-medium">Ended:</span> {session.endedAt ? fmtIso(session.endedAt) : "—"}
+                                            </div>
+                                        </div>
+                                        {session.note && (
+                                            <div className="text-sm">
+                                                <span className="text-muted-foreground">Note:</span> {session.note}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
