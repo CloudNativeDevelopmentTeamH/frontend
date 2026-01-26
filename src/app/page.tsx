@@ -211,17 +211,18 @@ export default function HomePage() {
                         <div className="flex flex-col gap-2 sm:flex-row">
                             <Button
                                 onClick={() => mutate("start", () => sessionsApi.start())}
-                                disabled={disabled}
+                                disabled={disabled || running !== null}
                                 className="sm:w-1/3"
+                                title={running ? "Session already running" : undefined}
                             >
                                 Start
                             </Button>
                             <Button
                                 variant="secondary"
-                                onClick={() => mutate("resume", () => sessionsApi.resume(String(running?.sessionId ?? "")))}
-                                disabled={disabled || !running}
+                                onClick={() => mutate("resume", () => sessionsApi.resume())}
+                                disabled={disabled || running !== null}
                                 className="sm:w-1/3"
-                                title={!running ? "No session to resume" : undefined}
+                                title={running ? "Stop current session first" : "Resume last session"}
                             >
                                 Resume
                             </Button>
