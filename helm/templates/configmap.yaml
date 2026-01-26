@@ -4,6 +4,6 @@ metadata:
   name: app-config
   namespace: {{ .Values.namespace }}
 data:
-  API_BASE_URL: {{ .Values.frontend.env.apiBaseUrl | quote }}
+  NEXT_PUBLIC_API_BASE_URL: {{ .Values.frontend.env.apiBaseUrl | quote }}
   NEXT_PUBLIC_AUTH_API_BASE_URL: {{ .Values.frontend.env.authApiBaseUrl | quote }}
   APP_VERSION: {{ .Values.frontend.env.appVersion | quote }}

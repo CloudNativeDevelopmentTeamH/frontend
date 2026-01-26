@@ -13,7 +13,7 @@ export interface AuthUser {
  * Check if user is authenticated
  */
 export async function checkAuth(): Promise<boolean> {
-    const authApiUrl = process.env.NEXT_PUBLIC_AUTH_API_BASE_URL || "http://localhost:4000";
+    const authApiUrl = process.env.NEXT_PUBLIC_AUTH_API_BASE_URL;
 
     try {
         const res = await fetch(`${authApiUrl}/auth/authenticate`, {
@@ -35,7 +35,7 @@ export async function checkAuth(): Promise<boolean> {
  * Fetch the current user's profile
  */
 export async function fetchProfile(): Promise<AuthUser | null> {
-    const authApiUrl = process.env.NEXT_PUBLIC_AUTH_API_BASE_URL || "http://localhost:4000";
+    const authApiUrl = process.env.NEXT_PUBLIC_AUTH_API_BASE_URL;
 
     try {
         const res = await fetch(`${authApiUrl}/auth/profile`, {
@@ -78,7 +78,7 @@ export async function authenticate(): Promise<AuthUser | null> {
  * This creates focus_sid and focus_csrf cookies for API access
  */
 async function establishFocusAuthSession(authToken: string): Promise<void> {
-    const focusApiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8088";
+    const focusApiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
     if (!authToken) {
         throw new Error("No auth token provided");
@@ -101,7 +101,7 @@ async function establishFocusAuthSession(authToken: string): Promise<void> {
  * Login with email and password
  */
 export async function login(email: string, password: string): Promise<{ user: AuthUser }> {
-    const authApiUrl = process.env.NEXT_PUBLIC_AUTH_API_BASE_URL || "http://localhost:4000";
+    const authApiUrl = process.env.NEXT_PUBLIC_AUTH_API_BASE_URL;
 
     const res = await fetch(`${authApiUrl}/auth/login`, {
         method: "POST",
@@ -135,7 +135,7 @@ export async function login(email: string, password: string): Promise<{ user: Au
  * Register a new user
  */
 export async function register(email: string, password: string, name?: string): Promise<{ user: AuthUser }> {
-    const authApiUrl = process.env.NEXT_PUBLIC_AUTH_API_BASE_URL || "http://localhost:4000";
+    const authApiUrl = process.env.NEXT_PUBLIC_AUTH_API_BASE_URL;
 
     const res = await fetch(`${authApiUrl}/auth/register`, {
         method: "POST",
@@ -161,8 +161,8 @@ export async function register(email: string, password: string, name?: string): 
  * Logout the current user
  */
 export async function logout(): Promise<void> {
-    const authApiUrl = process.env.NEXT_PUBLIC_AUTH_API_BASE_URL || "http://localhost:4000";
-    const focusApiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8088";
+    const authApiUrl = process.env.NEXT_PUBLIC_AUTH_API_BASE_URL;
+    const focusApiUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
     try {
         // Logout from focus first
