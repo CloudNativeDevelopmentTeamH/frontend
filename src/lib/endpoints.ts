@@ -23,8 +23,10 @@ export const sessionsApi = {
    ======================= */
 
 export const categoriesApi = {
-    list: () =>
-        apiFetch<Focus.Category[]>("/categories"),
+    list: async () => {
+        const response = await apiFetch<{ categories: Focus.Category[] }>("/categories");
+        return response.categories;
+    },
 
     create: (body: { name: string; color?: string }) =>
         apiFetch<void>("/categories/create", {
