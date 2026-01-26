@@ -8,11 +8,17 @@ export const sessionsApi = {
     running: () =>
         apiFetch<Focus.FocusSession | null>("/sessions/running"),
 
-    start: () =>
-        apiFetch<void>("/sessions/start", { method: "POST" }),
+    start: (body?: { categoryId?: string; note?: string }) =>
+        apiFetch<void>("/sessions/start", {
+            method: "POST",
+            body: body ? JSON.stringify(body) : undefined,
+        }),
 
-    resume: () =>
-        apiFetch<void>("/sessions/resume", { method: "POST" }),
+    resume: (body?: { categoryId?: string; note?: string }) =>
+        apiFetch<void>("/sessions/resume", {
+            method: "POST",
+            body: body ? JSON.stringify(body) : undefined,
+        }),
 
     stop: (sessionId: string) =>
         apiFetch<void>(`/sessions/stop?sessionId=${encodeURIComponent(sessionId)}`, { method: "POST" }),
