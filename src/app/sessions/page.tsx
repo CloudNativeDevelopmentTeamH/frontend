@@ -169,16 +169,16 @@ export default function SessionsPage() {
                         </Button>
                         <Button
                             variant="secondary"
-                            onClick={() => mutate("resume", () => sessionsApi.resume())}
-                            disabled={disabled}
+                            onClick={() => mutate("resume", () => sessionsApi.resume(String(running?.sessionId ?? "")))}
+                            disabled={disabled || !running}
                             className="sm:w-1/3"
                         >
                             Resume
                         </Button>
                         <Button
                             variant="destructive"
-                            onClick={() => mutate("stop", () => sessionsApi.stop())}
-                            disabled={disabled}
+                            onClick={() => mutate("stop", () => sessionsApi.stop(String(running?.sessionId ?? "")))}
+                            disabled={disabled || !running}
                             className="sm:w-1/3"
                         >
                             Stop
