@@ -218,15 +218,16 @@ export default function HomePage() {
                             </Button>
                             <Button
                                 variant="secondary"
-                                onClick={() => mutate("resume", () => sessionsApi.resume())}
-                                disabled={disabled}
+                                onClick={() => mutate("resume", () => sessionsApi.resume(String(running?.sessionId ?? "")))}
+                                disabled={disabled || !running}
                                 className="sm:w-1/3"
+                                title={!running ? "No session to resume" : undefined}
                             >
                                 Resume
                             </Button>
                             <Button
                                 variant="destructive"
-                                onClick={() => mutate("stop", () => sessionsApi.stop())}
+                                onClick={() => mutate("stop", () => sessionsApi.stop(String(running?.sessionId ?? "")))}
                                 disabled={disabled || !running}
                                 className="sm:w-1/3"
                                 title={!running ? "No running session" : undefined}
