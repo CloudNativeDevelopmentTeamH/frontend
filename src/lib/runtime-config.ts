@@ -1,6 +1,7 @@
 export type RuntimeConfig = {
     API_BASE_URL?: string;
     AUTH_API_BASE_URL?: string;
+    ANALYTICS_DATA_SOURCE?: string;
     APP_VERSION?: string;
 };
 

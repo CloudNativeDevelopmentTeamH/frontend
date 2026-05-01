@@ -184,6 +184,9 @@ export default function HomePage() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                    <Button variant="secondary" asChild>
+                        <Link href="/analytics">Analytics</Link>
+                    </Button>
                     {state === "loading" ? <Badge variant="outline">loading…</Badge> : null}
                     {state === "working" ? <Badge variant="outline">working…</Badge> : null}
                     <Button
