@@ -31,6 +31,7 @@ stages:
     IMAGE_REPO: frontend
     IMAGE_NAME: ${IMAGE_NAMESPACE}/${IMAGE_REPO}
     HARBOR_IMAGE: $HARBOR_IMAGE_PREFIX/$IMAGE_NAME
+    GHCR_IMAGE: $GHCR_IMAGE_PREFIX/$IMAGE_NAME
     ECR_IMAGE: $ECR_REGISTRY/$IMAGE_NAME
 
 set-app-version:
@@ -55,6 +56,20 @@ build-image:
     - docker push "$HARBOR_IMAGE:$APP_VERSION"
     - docker push "$HARBOR_IMAGE:latest"
 
+push-image-ghcr:
+  stage: 🏗️ build
+  extends: .image_names
+  needs:
+    - set-app-version
+    - build-image
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache skopeo
+  script:
+    - skopeo copy --src-creds "$HARBOR_ROBOT_NAME:$HARBOR_ROBOT_TOKEN" --dest-creds "USERNAME:${GHCR_PAT}" "docker://$HARBOR_IMAGE:$APP_VERSION" "docker://$GHCR_IMAGE:$APP_VERSION"
+    - skopeo copy --src-creds "$HARBOR_ROBOT_NAME:$HARBOR_ROBOT_TOKEN" --dest-creds "USERNAME:${GHCR_PAT}" "docker://$HARBOR_IMAGE:latest" "docker://$GHCR_IMAGE:latest"
+  when: manual
+
 push-image-ecr:
   stage: 🏗️ build
   extends: .image_names
@@ -71,6 +86,7 @@ push-image-ecr:
   script:
     - skopeo copy --src-creds "$HARBOR_ROBOT_NAME:$HARBOR_ROBOT_TOKEN" --dest-creds "AWS:$ECR_PASSWORD" "docker://$HARBOR_IMAGE:$APP_VERSION" "docker://$ECR_IMAGE:$APP_VERSION"
     - skopeo copy --src-creds "$HARBOR_ROBOT_NAME:$HARBOR_ROBOT_TOKEN" --dest-creds "AWS:$ECR_PASSWORD" "docker://$HARBOR_IMAGE:latest" "docker://$ECR_IMAGE:latest"
+  when: manual
 
 deploy-eks-prod:
   stage: 🚀 deploy
@@ -85,3 +101,4 @@ deploy-eks-prod:
     - aws eks update-kubeconfig --region eu-central-1 --name cnd-prod-eks
   script:
     - helm upgrade frontend ./helm -n frontend
+  when: manual
