@@ -170,9 +170,11 @@ async function buildApiDashboard(): Promise<AnalyticsDashboard> {
             } satisfies AnalyticsCategoryMetric;
         })
     );
+    // Ensure stable ordering: show categories sorted by share descending.
+    const sorted = breakdown.slice().sort((a, b) => b.share - a.share);
 
-    const totalSeconds = sumSeconds(breakdown);
-    const topCategory = breakdown[0] ?? {
+    const totalSeconds = sumSeconds(sorted);
+    const topCategory = sorted[0] ?? {
         name: "Uncategorized",
         share: 0,
         totalSeconds: 0,
@@ -184,14 +186,14 @@ async function buildApiDashboard(): Promise<AnalyticsDashboard> {
         summary: {
             averageOverallSeconds: general.averageLengthOverallSeconds,
             averageLast10Seconds: general.averageLengthLast10Seconds,
-            totalSessions: breakdown.reduce((total, item) => total + item.count, 0),
+            totalSessions: sorted.reduce((total, item) => total + item.count, 0),
             totalMinutes: Math.round(totalSeconds / 60),
             topCategoryName: topCategory.name,
             topCategoryShare: topCategory.share,
             topCategoryMinutes: Math.round(topCategory.totalSeconds / 60),
         },
-        categories: breakdown,
-        trend: createTrendFromCategories(breakdown),
+        categories: sorted,
+        trend: createTrendFromCategories(sorted),
     };
 }
 

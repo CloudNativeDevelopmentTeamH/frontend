@@ -9,7 +9,8 @@ function js(obj: unknown) {
 
 export async function GET() {
     const API_BASE_URL = process.env.API_BASE_URL ?? "";
-    const ANALYTICS_DATA_SOURCE = process.env.ANALYTICS_DATA_SOURCE ?? "mock";
+    // If an API base URL is provided, prefer live API as default data source.
+    const ANALYTICS_DATA_SOURCE = process.env.ANALYTICS_DATA_SOURCE ?? (API_BASE_URL ? "api" : "mock");
     const APP_VERSION = process.env.APP_VERSION ?? "dev";
 
     const body = js({ API_BASE_URL, ANALYTICS_DATA_SOURCE, APP_VERSION });
