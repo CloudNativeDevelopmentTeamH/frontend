@@ -11,6 +11,72 @@ export interface AuthUser {
     name?: string;
 }
 
+export type AuthErrorCode =
+    | "VALIDATION_ERROR"
+    | "CONFLICT_ERROR"
+    | "UNAUTHORIZED"
+    | "INTERNAL_SERVER_ERROR"
+    | "NETWORK_ERROR"
+    | "UNKNOWN_ERROR";
+
+/**
+ * Abstract error type for auth operations (business logic layer)
+ */
+export interface AuthError {
+    code: AuthErrorCode;
+    message: string;
+}
+
+/**
+ * Internal HTTP-specific error (infrastructure layer)
+ */
+class AuthApiError extends Error {
+    code: AuthErrorCode;
+    status?: number;
+
+    constructor(message: string, options?: { code?: AuthErrorCode; status?: number }) {
+        super(message);
+        this.name = "AuthApiError";
+        this.code = options?.code ?? "UNKNOWN_ERROR";
+        this.status = options?.status;
+    }
+}
+
+/**
+ * Parse HTTP error response and convert to AuthError
+ */
+async function buildAuthError(response: Response, fallbackMessage: string): Promise<AuthError> {
+    let message = fallbackMessage;
+    let code: AuthErrorCode = "UNKNOWN_ERROR";
+
+    const contentType = response.headers.get("content-type") ?? "";
+
+    if (contentType.includes("application/json")) {
+        const body = await response.json().catch(() => null) as {
+            error?: { code?: string; message?: string };
+            message?: string;
+        } | null;
+
+        if (body?.error?.message) {
+            message = body.error.message;
+        } else if (body?.message) {
+            message = body.message;
+        }
+
+        const rawCode = body?.error?.code;
+        if (rawCode === "VALIDATION_ERROR" || rawCode === "CONFLICT_ERROR" || rawCode === "UNAUTHORIZED" || rawCode === "INTERNAL_SERVER_ERROR") {
+            code = rawCode;
+        }
+    } else {
+        const text = await response.text().catch(() => "");
+        if (text) {
+            message = text;
+        }
+    }
+
+    return { code, message };
+}
+
 function getAuthApiUrl(): string {
     const runtime = getRuntimeConfig();
     return runtime.AUTH_API_BASE_URL ?? process.env.NEXT_PUBLIC_AUTH_API_BASE_URL ?? "";
@@ -149,18 +215,22 @@ export async function login(email: string, password: string): Promise<{ user: Au
 export async function register(email: string, password: string, name?: string): Promise<{ user: AuthUser }> {
     const authApiUrl = getAuthApiUrl();
 
-    const res = await fetch(`${authApiUrl}/auth/register`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password, name }),
-        credentials: "include",
-    });
+    let res: Response;
+    try {
+        res = await fetch(`${authApiUrl}/auth/register`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email, password, name }),
+            credentials: "include",
+        });
+    } catch {
+        throw { code: "NETWORK_ERROR", message: "Cannot reach auth service. Please try again." } as AuthError;
+    }
 
     if (!res.ok) {
-        const error = await res.json().catch(() => ({ message: "Registration failed" }));
-        throw new Error(error.message || "Registration failed");
+        throw await buildAuthError(res, "Registration failed");
     }
 
     // Response might be empty or contain user data

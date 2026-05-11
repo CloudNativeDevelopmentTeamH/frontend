@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { mapApiErrorToMessage } from "@/lib/api/errors";
 import {
     Dialog,
     DialogContent,
@@ -56,8 +57,8 @@ export default function SessionsPage() {
 
         try {
             const [res, allSessions, cats] = await Promise.all([
-                sessionsApi.running().catch((e: any) => {
-                    const msg = e?.message ?? "";
+                sessionsApi.running().catch((e: unknown) => {
+                    const msg = e instanceof Error ? e.message : "";
                     if (typeof msg === "string" && msg.includes("404")) return null;
                     throw e;
                 }),
@@ -69,8 +70,8 @@ export default function SessionsPage() {
             setCategories(cats);
             setLastRefreshAt(new Date());
             setState("idle");
-        } catch (e: any) {
-            setError(e?.message ?? "Failed to load session data");
+        } catch (e: unknown) {
+            setError(mapApiErrorToMessage(e, "Failed to load session data"));
             setState("error");
         }
     }, []);
@@ -86,8 +87,8 @@ export default function SessionsPage() {
             await fn();
             // After any command, refresh real state from BE
             await reload();
-        } catch (e: any) {
-            setError(e?.message ?? `Action failed: ${action}`);
+        } catch (e: unknown) {
+            setError(mapApiErrorToMessage(e, `${action.charAt(0).toUpperCase() + action.slice(1)} failed. Please try again.`));
             setState("error");
         } finally {
             // reload() sets idle/error; if reload wasn't reached due to error above, keep error

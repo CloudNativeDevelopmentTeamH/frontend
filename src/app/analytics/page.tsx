@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { mapApiErrorToMessage } from "@/lib/api/errors";
 
 function formatMinutes(minutes: number): string {
     const rounded = Math.max(0, Math.round(minutes));
@@ -133,8 +134,8 @@ export default function AnalyticsPage() {
         try {
             const data = await loadAnalyticsDashboard();
             setDashboard(data);
-        } catch (e: any) {
-            setError(e?.message ?? "Failed to load analytics data");
+        } catch (e: unknown) {
+            setError(mapApiErrorToMessage(e, "Failed to load analytics data"));
         } finally {
             setLoading(false);
         }
