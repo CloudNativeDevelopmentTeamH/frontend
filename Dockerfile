@@ -7,7 +7,7 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 RUN corepack enable
 COPY package.json pnpm-lock.yaml .npmrc* ./
-RUN pnpm i --frozen-lockfile --no-ignore-scripts
+RUN pnpm config set only-built-dependencies-none true && pnpm i --frozen-lockfile
 
 FROM base AS builder
 RUN apk add --no-cache libc6-compat
