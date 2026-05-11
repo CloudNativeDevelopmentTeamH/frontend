@@ -6,7 +6,32 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { login } from "@/lib/auth";
+import { AuthError, login } from "@/lib/auth";
+
+function getLoginErrorMessage(error: unknown): string {
+    // Check if it's an AuthError (interface with code and message)
+    if (error && typeof error === "object" && "code" in error && "message" in error) {
+        const authError = error as AuthError;
+        switch (authError.code) {
+            case "VALIDATION_ERROR":
+                return authError.message;
+            case "UNAUTHORIZED":
+                return "Invalid email or password.";
+            case "NETWORK_ERROR":
+                return "Cannot reach auth service. Please check your connection and try again.";
+            case "INTERNAL_SERVER_ERROR":
+                return "The server encountered an unexpected error. Please try again in a moment.";
+            default:
+                return authError.message || "Login failed. Please try again.";
+        }
+    }
+
+    if (error instanceof Error) {
+        return error.message;
+    }
+
+    return "Login failed. Please try again.";
+}
 
 function LoginForm() {
     const router = useRouter();
@@ -32,8 +57,9 @@ function LoginForm() {
             await login(email, password);
             router.refresh();
             router.push("/");
-        } catch (err: any) {
-            setError(err?.message || "Login failed. Please try again.");
+        } catch (err: unknown) {
+            console.error("Login error:", err);
+            setError(getLoginErrorMessage(err));
         } finally {
             setIsLoading(false);
         }

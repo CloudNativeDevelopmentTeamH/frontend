@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { mapApiErrorToMessage } from "@/lib/api/errors";
 
 function formatMinutes(minutes: number): string {
     const rounded = Math.max(0, Math.round(minutes));
@@ -133,8 +134,8 @@ export default function AnalyticsPage() {
         try {
             const data = await loadAnalyticsDashboard();
             setDashboard(data);
-        } catch (e: any) {
-            setError(e?.message ?? "Failed to load analytics data");
+        } catch (e: unknown) {
+            setError(mapApiErrorToMessage(e, "Failed to load analytics data"));
         } finally {
             setLoading(false);
         }
@@ -177,7 +178,7 @@ export default function AnalyticsPage() {
                             </Badge>
                         </div>
                         <p className="max-w-2xl text-sm text-muted-foreground">
-                            A dashboard for session behavior, category distribution, and focus load. The current data source can be swapped from mock to the real endpoint without changing the page structure.
+                            A dashboard for session behavior, category distribution, and focus load.
                         </p>
                     </div>
                 </div>
@@ -325,22 +326,14 @@ export default function AnalyticsPage() {
                                 <Card className="lg:col-span-2">
                                     <CardHeader>
                                         <CardTitle className="text-base">What this page is built for</CardTitle>
-                                        <CardDescription>
-                                            This dashboard is intentionally backed by a swappable data source.
-                                        </CardDescription>
                                     </CardHeader>
                                     <CardContent className="space-y-3 text-sm text-muted-foreground">
                                         <p>
-                                            The current implementation uses mock data by default so the page can be designed and iterated on before the real analytics endpoint is wired in.
+                                            The dashboard helps you track category distribution, session duration behavior, and overall focus load.
                                         </p>
                                         <p>
-                                            When the backend endpoint is ready, set <span className="font-mono text-foreground">ANALYTICS_DATA_SOURCE=api</span> to switch the same UI to live data.
+                                            Use the Overview and Categories tabs to compare trends and identify where most time is spent.
                                         </p>
-                                        <div className="flex flex-wrap gap-2 pt-2">
-                                            <Badge variant="secondary">Mock first</Badge>
-                                            <Badge variant="secondary">API-ready</Badge>
-                                            <Badge variant="secondary">Replaceable source</Badge>
-                                        </div>
                                     </CardContent>
                                 </Card>
 
@@ -359,7 +352,7 @@ export default function AnalyticsPage() {
                                         </div>
                                         <Separator />
                                         <div className="text-muted-foreground">
-                                            The page will stay structurally stable even when the source changes.
+                                            Refresh to load the latest available analytics values.
                                         </div>
                                     </CardContent>
                                 </Card>

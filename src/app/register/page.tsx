@@ -6,7 +6,32 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { register } from "@/lib/auth";
+import { AuthError, register } from "@/lib/auth";
+
+function getRegisterErrorMessage(error: unknown): string {
+    // Check if it's an AuthError (interface with code and message)
+    if (error && typeof error === "object" && "code" in error && "message" in error) {
+        const authError = error as AuthError;
+        switch (authError.code) {
+            case "VALIDATION_ERROR":
+                return authError.message;
+            case "CONFLICT_ERROR":
+                return "A user with this email already exists.";
+            case "NETWORK_ERROR":
+                return "Cannot reach auth service. Please check your connection and try again.";
+            case "INTERNAL_SERVER_ERROR":
+                return "The server encountered an unexpected error. Please try again in a moment.";
+            default:
+                return authError.message || "Registration failed. Please try again.";
+        }
+    }
+
+    if (error instanceof Error) {
+        return error.message;
+    }
+
+    return "Registration failed. Please try again.";
+}
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -25,9 +50,9 @@ export default function RegisterPage() {
             await register(email, password, name || undefined);
             // Redirect to login with success message
             router.push("/login?registered=true");
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Registration error:", err);
-            setError(err?.message || err?.toString() || "Registration failed. Please try again.");
+            setError(getRegisterErrorMessage(err));
         } finally {
             setIsLoading(false);
         }

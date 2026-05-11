@@ -1,13 +1,13 @@
 # syntax=docker.io/docker/dockerfile:1
 
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 WORKDIR /app
 
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
 RUN corepack enable
 COPY package.json pnpm-lock.yaml .npmrc* ./
-RUN pnpm i --frozen-lockfile
+RUN pnpm i --frozen-lockfile --dangerously-allow-all-builds
 
 FROM base AS builder
 RUN apk add --no-cache libc6-compat
@@ -16,7 +16,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN pnpm run build
 
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production

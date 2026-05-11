@@ -170,9 +170,11 @@ async function buildApiDashboard(): Promise<AnalyticsDashboard> {
             } satisfies AnalyticsCategoryMetric;
         })
     );
+    // Ensure stable ordering: show categories sorted by share descending.
+    const sorted = breakdown.slice().sort((a, b) => b.share - a.share);
 
-    const totalSeconds = sumSeconds(breakdown);
-    const topCategory = breakdown[0] ?? {
+    const totalSeconds = sumSeconds(sorted);
+    const topCategory = sorted[0] ?? {
         name: "Uncategorized",
         share: 0,
         totalSeconds: 0,
@@ -184,14 +186,14 @@ async function buildApiDashboard(): Promise<AnalyticsDashboard> {
         summary: {
             averageOverallSeconds: general.averageLengthOverallSeconds,
             averageLast10Seconds: general.averageLengthLast10Seconds,
-            totalSessions: breakdown.reduce((total, item) => total + item.count, 0),
+            totalSessions: sorted.reduce((total, item) => total + item.count, 0),
             totalMinutes: Math.round(totalSeconds / 60),
             topCategoryName: topCategory.name,
             topCategoryShare: topCategory.share,
             topCategoryMinutes: Math.round(topCategory.totalSeconds / 60),
         },
-        categories: breakdown,
-        trend: createTrendFromCategories(breakdown),
+        categories: sorted,
+        trend: createTrendFromCategories(sorted),
     };
 }
 
@@ -208,7 +210,16 @@ function createTrendFromCategories(categories: AnalyticsCategoryMetric[]): Analy
 
 export async function loadAnalyticsDashboard(): Promise<AnalyticsDashboard> {
     const runtime = getRuntimeConfig();
-    const source = (runtime.ANALYTICS_DATA_SOURCE ?? process.env.NEXT_PUBLIC_ANALYTICS_DATA_SOURCE ?? "mock") as AnalyticsSource;
+    const apiBaseUrl = (runtime.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "").trim();
+    const configuredSource = (runtime.ANALYTICS_DATA_SOURCE ?? process.env.NEXT_PUBLIC_ANALYTICS_DATA_SOURCE ?? "").toLowerCase();
+
+    // Prefer live analytics whenever an API base URL is available in runtime config.
+    // Only force mock when explicitly configured and no API base URL is present.
+    const source: AnalyticsSource = apiBaseUrl
+        ? "api"
+        : configuredSource === "api"
+          ? "api"
+          : "mock";
 
     if (source === "api") {
         return buildApiDashboard();

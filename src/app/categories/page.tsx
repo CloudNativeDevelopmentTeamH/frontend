@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { mapApiErrorToMessage } from "@/lib/api/errors";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     Dialog,
@@ -123,8 +124,8 @@ export default function CategoriesPage() {
             });
             setItems(data);
             setState("idle");
-        } catch (e: any) {
-            setError(e?.message ?? "Failed to load categories");
+        } catch (e: unknown) {
+            setError(mapApiErrorToMessage(e, "Failed to load categories"));
             setState("error");
         }
     }, []);
@@ -144,8 +145,8 @@ export default function CategoriesPage() {
         try {
             await fn();
             await reload();
-        } catch (e: any) {
-            setError(e?.message ?? fallbackMessage);
+        } catch (e: unknown) {
+            setError(mapApiErrorToMessage(e, fallbackMessage));
             setState("error");
         } finally {
             setMutating(false);
