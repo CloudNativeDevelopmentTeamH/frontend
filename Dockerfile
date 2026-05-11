@@ -7,7 +7,7 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 RUN corepack enable
 COPY package.json pnpm-lock.yaml .npmrc* ./
-RUN pnpm i --frozen-lockfile
+RUN pnpm i --frozen-lockfile --allow-build=sharp,unrs-resolver
 
 FROM base AS builder
 RUN apk add --no-cache libc6-compat
