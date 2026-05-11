@@ -210,7 +210,16 @@ function createTrendFromCategories(categories: AnalyticsCategoryMetric[]): Analy
 
 export async function loadAnalyticsDashboard(): Promise<AnalyticsDashboard> {
     const runtime = getRuntimeConfig();
-    const source = (runtime.ANALYTICS_DATA_SOURCE ?? process.env.NEXT_PUBLIC_ANALYTICS_DATA_SOURCE ?? "mock") as AnalyticsSource;
+    const apiBaseUrl = (runtime.API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "").trim();
+    const configuredSource = (runtime.ANALYTICS_DATA_SOURCE ?? process.env.NEXT_PUBLIC_ANALYTICS_DATA_SOURCE ?? "").toLowerCase();
+
+    // Prefer live analytics whenever an API base URL is available in runtime config.
+    // Only force mock when explicitly configured and no API base URL is present.
+    const source: AnalyticsSource = apiBaseUrl
+        ? "api"
+        : configuredSource === "api"
+          ? "api"
+          : "mock";
 
     if (source === "api") {
         return buildApiDashboard();
