@@ -48,7 +48,7 @@ build-image:
   variables:
     BUILDAH_FORMAT: docker
   before_script:
-    - echo "$HARBOR_ROBOT_TOKEN" | docker login "$HARBOR_URL" -u "$HARBOR_ROBOT_NAME" --password-stdin
+    - echo "$HARBOR_ROBOT_TOKEN" | buildah login "$HARBOR_URL" -u "$HARBOR_ROBOT_NAME" --password-stdin
   script:
     - buildah build -t "$HARBOR_IMAGE:$APP_VERSION" -t "$HARBOR_IMAGE:latest" .
     - buildah push "$HARBOR_IMAGE:$APP_VERSION"
